@@ -27,6 +27,6 @@ pub mod gpu;
 pub mod pattern;
 pub mod uniforms;
 
-pub use engine::{read_texture_rgba, Engine};
+pub use engine::{read_texture_rgba, Engine, Previews};
 pub use gpu::{align_up, Gpu, COPY_ALIGN, TARGET_FORMAT};
 pub use pattern::{bars_uyvy, gradient_uyvy, solid_uyvy};

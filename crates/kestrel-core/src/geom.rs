@@ -111,7 +111,7 @@ impl NormRect {
 }
 
 /// A raster size in pixels.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Size {
     pub w: u32,
     pub h: u32,

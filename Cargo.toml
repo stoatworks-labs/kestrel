@@ -4,6 +4,9 @@ members = [
     "crates/diag",
     "crates/kestrel-core",
     "crates/kestrel-render",
+    "crates/kestrel-decklink",
+    "crates/kestrel-control",
+    "crates/kestrel-app",
 ]
 
 [workspace.package]

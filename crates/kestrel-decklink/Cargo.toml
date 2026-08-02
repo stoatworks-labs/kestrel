@@ -1,0 +1,17 @@
+[package]
+name = "kestrel-decklink"
+description = "Blackmagic DeckLink capture and scheduled playback, behind a safe Rust API. Optional: builds without the SDK and reports itself unavailable."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+build = "build.rs"
+
+[dependencies]
+kestrel-core = { path = "../kestrel-core" }
+thiserror.workspace = true
+tracing.workspace = true
+
+[build-dependencies]
+cc = "1"

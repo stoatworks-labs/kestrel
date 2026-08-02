@@ -1,0 +1,22 @@
+[package]
+name = "kestrel-control"
+description = "Kestrel's control surface: shared state, an HTTP command API and a WebSocket state feed."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+kestrel-core = { path = "../kestrel-core" }
+axum.workspace = true
+tokio.workspace = true
+tower-http.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+parking_lot.workspace = true
+tracing.workspace = true
+anyhow.workspace = true
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }

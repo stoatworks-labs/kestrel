@@ -4,7 +4,7 @@ use crate::gpu::{align_up, Gpu, COPY_ALIGN, TARGET_FORMAT};
 use crate::uniforms::{CropUniform, ScalarUniform};
 use anyhow::{anyhow, Result};
 use kestrel_core::{
-    place, OutputId, OutputPlan, Pattern, PlanSource, ScalingFilter, Size, VideoFormat,
+    place, NormRect, OutputId, OutputPlan, Pattern, PlanSource, ScalingFilter, Size, VideoFormat,
 };
 use std::collections::HashMap;
 use wgpu::util::DeviceExt;
@@ -55,6 +55,36 @@ struct OutputTarget {
     frame: Vec<u8>,
 }
 
+/// Which live texture a preview is a copy of.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum PreviewKey {
+    Input,
+    Output(OutputId),
+}
+
+/// A small offscreen copy of a live texture, for the UI.
+struct PreviewTarget {
+    size: Size,
+    tex: wgpu::Texture,
+    view: wgpu::TextureView,
+    uniform: wgpu::Buffer,
+    bind: wgpu::BindGroup,
+    /// Which generation of source bindings this was built against. A preview
+    /// holds a bind group pointing at a source texture, so a raster change
+    /// leaves it showing the old picture forever — which reads as a frozen
+    /// source rather than as a stale binding.
+    generation: u64,
+}
+
+/// Thumbnails of the input and of every output, as tightly packed RGBA.
+#[derive(Debug, Clone, Default)]
+pub struct Previews {
+    pub input_size: Size,
+    pub input: Vec<u8>,
+    pub output_size: Size,
+    pub outputs: Vec<(OutputId, Vec<u8>)>,
+}
+
 /// A stage with one pipeline and one bind group layout.
 struct Stage {
     pipeline: wgpu::RenderPipeline,
@@ -72,6 +102,10 @@ pub struct Engine {
     outputs: HashMap<OutputId, OutputTarget>,
     /// Preserves the caller's output order, which is the order the UI shows.
     order: Vec<OutputId>,
+    previews: HashMap<PreviewKey, PreviewTarget>,
+    /// Bumped whenever a source texture is replaced, so anything holding a
+    /// bind group against one knows to rebuild.
+    binding_generation: u64,
     output_format: VideoFormat,
     scaling: ScalingFilter,
     /// False until a frame has been uploaded, and again after the input is
@@ -167,6 +201,8 @@ impl Engine {
             input,
             outputs: HashMap::new(),
             order: Vec::new(),
+            previews: HashMap::new(),
+            binding_generation: 0,
             output_format,
             scaling: ScalingFilter::default(),
             input_live: false,
@@ -206,6 +242,7 @@ impl Engine {
         tracing::info!(from = ?self.input.size, to = ?size, "input raster changed");
         self.input = make_input(&self.gpu, &self.decode.layout, size);
         self.input_live = false;
+        self.binding_generation += 1;
         // Every output's crop bind group points at the old decoded texture.
         let ids: Vec<_> = self.order.clone();
         self.outputs.clear();
@@ -219,6 +256,7 @@ impl Engine {
             return;
         }
         self.output_format = fmt;
+        self.binding_generation += 1;
         let ids: Vec<_> = self.order.clone();
         self.outputs.clear();
         self.order.clear();
@@ -437,7 +475,100 @@ impl Engine {
         Ok(())
     }
 
-    /// The decoded input, for the preview pane.
+    /// Downscale the input and every output into small RGBA buffers for the UI.
+    ///
+    /// The UI is deliberately fed by *copies* rather than by sharing the live
+    /// textures. Sharing them would tie the GUI's frame loop to the frame path
+    /// — and the frame path is on a clock that a dragged window or an open menu
+    /// must not be able to stall. This runs on the render thread at its own
+    /// slower rate; a thumbnail set at 320x180 is about a megabyte, so 15 Hz
+    /// costs a few percent of what the outputs already cost.
+    ///
+    /// Each output thumbnail is a scaled copy of *that output's own finished
+    /// picture*, so a thumbnail structurally cannot disagree with what is on
+    /// the wire.
+    pub fn capture_previews(&mut self, thumb_height: u32) -> Previews {
+        let aspect = self.output_format.size.aspect().max(0.1);
+        let out_thumb = Size::new(
+            ((thumb_height as f64 * aspect) as u32).max(2) & !1,
+            thumb_height.max(2),
+        );
+        let in_aspect = self.input.size.aspect().max(0.1);
+        let in_h = thumb_height * 3;
+        let in_thumb = Size::new(((in_h as f64 * in_aspect) as u32).max(2) & !1, in_h);
+
+        let input = self
+            .preview_of(PreviewKey::Input, in_thumb)
+            .unwrap_or_default();
+        let outputs = self
+            .order
+            .clone()
+            .into_iter()
+            .map(|id| {
+                let rgba = self
+                    .preview_of(PreviewKey::Output(id), out_thumb)
+                    .unwrap_or_default();
+                (id, rgba)
+            })
+            .collect();
+
+        Previews {
+            input_size: in_thumb,
+            input,
+            output_size: out_thumb,
+            outputs,
+        }
+    }
+
+    fn preview_of(&mut self, key: PreviewKey, size: Size) -> Result<Vec<u8>> {
+        let source_view: &wgpu::TextureView = match key {
+            PreviewKey::Input => &self.input.decoded_view,
+            PreviewKey::Output(id) => match self.outputs.get(&id) {
+                Some(t) => &t.rgba_view,
+                None => return Ok(Vec::new()),
+            },
+        };
+
+        let stale = self
+            .previews
+            .get(&key)
+            .is_none_or(|p| p.size != size || p.generation != self.binding_generation);
+        if stale {
+            let p = make_preview(&self.gpu, &self.crop.layout, &self.sampler, source_view, size);
+            self.previews.insert(key, PreviewTarget { generation: self.binding_generation, ..p });
+        }
+        let p = &self.previews[&key];
+
+        // A straight full-frame copy at the thumbnail raster; the placement
+        // maths is identical to a crop, so the same shader does it.
+        let src_size = match key {
+            PreviewKey::Input => self.input.size,
+            PreviewKey::Output(_) => self.output_format.size,
+        };
+        let placement = place(&NormRect::FULL, src_size, size, kestrel_core::FitMode::Fit);
+        let u = CropUniform::new(&placement, src_size, size, ScalingFilter::Bilinear);
+        self.gpu
+            .queue
+            .write_buffer(&p.uniform, 0, bytemuck::bytes_of(&u));
+
+        let mut enc = self
+            .gpu
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("preview"),
+            });
+        {
+            let mut pass = begin_pass(&mut enc, "preview", &p.view);
+            pass.set_pipeline(&self.crop.pipeline);
+            pass.set_bind_group(0, &p.bind, &[]);
+            pass.draw(0..3, 0..1);
+        }
+        self.gpu.queue.submit([enc.finish()]);
+
+        read_texture_rgba(&self.gpu, &p.tex, size)
+    }
+
+    /// The decoded input, for anything sharing this device.
     pub fn input_view(&self) -> &wgpu::TextureView {
         &self.input.decoded_view
     }
@@ -635,6 +766,49 @@ fn make_output(
         row_bytes,
         padded_row,
         frame: vec![0u8; (row_bytes * size.h) as usize],
+    }
+}
+
+fn make_preview(
+    gpu: &Gpu,
+    crop_layout: &wgpu::BindGroupLayout,
+    sampler: &wgpu::Sampler,
+    source_view: &wgpu::TextureView,
+    size: Size,
+) -> PreviewTarget {
+    let tex = gpu.target_texture("preview", size.w, size.h);
+    let view = tex.create_view(&Default::default());
+    let uniform = gpu.device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("preview u"),
+        size: std::mem::size_of::<CropUniform>() as u64,
+        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    });
+    let bind = gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("preview bg"),
+        layout: crop_layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(source_view),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::Sampler(sampler),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: uniform.as_entire_binding(),
+            },
+        ],
+    });
+    PreviewTarget {
+        size,
+        tex,
+        view,
+        uniform,
+        bind,
+        generation: 0,
     }
 }
 
