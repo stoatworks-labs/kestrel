@@ -1,0 +1,49 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/diag",
+    "crates/kestrel-core",
+    "crates/kestrel-render",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["Allan Sargeant"]
+repository = "https://github.com/stoatworks-labs/kestrel"
+
+# wgpu is pinned to whatever `egui-wgpu` depends on, never left to float. Two
+# wgpu versions in one tree compile fine and then refuse to share a `Device`,
+# because `wgpu::Device` from 29 and from 30 are different types — the error
+# reads like a lifetime bug. egui-wgpu 0.35 wants wgpu 29. If you bump egui,
+# re-check with:
+#     cargo tree | grep -oE '(^|[^-])wgpu v[0-9.]+'
+# and make sure exactly one version comes back. (A bare `grep wgpu` also matches
+# the `egui-wgpu` suffix and looks like a conflict when there isn't one.)
+[workspace.dependencies]
+egui = "0.35.0"
+egui-wgpu = "0.35.0"
+egui-winit = "0.35.0"
+wgpu = "29"
+winit = "0.30.13"
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+bytemuck = { version = "1", features = ["derive"] }
+pollster = "0.4"
+parking_lot = "0.12"
+crossbeam-channel = "0.5"
+
+axum = { version = "0.7", features = ["ws"] }
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.5", features = ["cors"] }
+
+[profile.release]
+# Live video: a debug-assert-free, optimised build is the only one worth timing.
+opt-level = 3
+lto = "thin"

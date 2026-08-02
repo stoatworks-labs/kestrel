@@ -1,0 +1,13 @@
+[package]
+name = "kestrel-core"
+description = "Kestrel's domain model: regions of interest, outputs, the routing matrix and the show file. No GPU, no IO."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
