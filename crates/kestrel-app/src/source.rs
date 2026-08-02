@@ -109,7 +109,7 @@ impl SyntheticSource {
 
     /// Next frame: the bars, with a bright column sweeping left to right once
     /// every four seconds at 50p.
-    pub fn next(&mut self) -> &[u8] {
+    pub fn next_frame(&mut self) -> &[u8] {
         self.frame.copy_from_slice(&self.base);
         let stride = self.row_bytes() as usize;
         let macro_w = (self.size.w.div_ceil(2)) as usize;
@@ -148,7 +148,7 @@ mod tests {
     fn a_frame_already_seen_is_not_handed_out_again() {
         let slot = FrameSlot::new();
         let size = Size::new(16, 4);
-        slot.put(&vec![1u8; 128], 32, size, false);
+        slot.put(&[1u8; 128], 32, size, false);
         let first = slot.take_newer_than(0).unwrap();
         assert!(
             slot.take_newer_than(first.seq).is_none(),
@@ -159,7 +159,7 @@ mod tests {
     #[test]
     fn a_resize_replaces_the_buffer_rather_than_writing_past_it() {
         let slot = FrameSlot::new();
-        slot.put(&vec![1u8; 128], 32, Size::new(16, 4), false);
+        slot.put(&[1u8; 128], 32, Size::new(16, 4), false);
         slot.put(&vec![9u8; 512], 64, Size::new(32, 8), false);
         let got = slot.take_newer_than(0).unwrap();
         assert_eq!(got.bytes.len(), 512);
@@ -169,10 +169,10 @@ mod tests {
     #[test]
     fn the_synthetic_source_actually_changes_between_frames() {
         let mut s = SyntheticSource::new(Size::new(64, 8));
-        let a = s.next().to_vec();
+        let a = s.next_frame().to_vec();
         // The marker moves every other tick.
-        s.next();
-        let c = s.next().to_vec();
+        s.next_frame();
+        let c = s.next_frame().to_vec();
         assert_ne!(a, c, "a still pattern cannot show that the path is running");
         assert_eq!(a.len(), pattern::row_bytes(Size::new(64, 8)) as usize * 8);
     }

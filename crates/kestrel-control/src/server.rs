@@ -199,7 +199,7 @@ async fn push_state(mut socket: WebSocket, shared: Arc<Shared>) {
         let Ok(text) = serde_json::to_string(&shared.snapshot()) else {
             continue;
         };
-        if socket.send(Message::Text(text.into())).await.is_err() {
+        if socket.send(Message::Text(text)).await.is_err() {
             return; // the surface went away
         }
     }

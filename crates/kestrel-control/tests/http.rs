@@ -29,7 +29,9 @@ async fn call(s: &Arc<Shared>, method: &str, path: &str, body: &str) -> serde_js
         "{method} {path} answered {}",
         res.status()
     );
-    let bytes = axum::body::to_bytes(res.into_body(), 1 << 20).await.unwrap();
+    let bytes = axum::body::to_bytes(res.into_body(), 1 << 20)
+        .await
+        .unwrap();
     serde_json::from_slice(&bytes).unwrap()
 }
 
@@ -123,7 +125,10 @@ async fn muting_leaves_every_route_intact() {
     let v = get(&s, "/api/state").await;
     assert_eq!(v["outputs"][0]["assigned"], 1, "the route must survive");
     for o in v["outputs"].as_array().unwrap() {
-        assert_eq!(o["on_air"], "muted", "every output goes to black, not just one");
+        assert_eq!(
+            o["on_air"], "muted",
+            "every output goes to black, not just one"
+        );
     }
 }
 
@@ -154,7 +159,13 @@ async fn a_region_can_be_created_edited_and_deleted() {
 
     let r = call(&s, "DELETE", &format!("/api/roi/{id}"), "").await;
     assert_eq!(r["ok"], true);
-    assert_eq!(get(&s, "/api/state").await["rois"].as_array().unwrap().len(), 2);
+    assert_eq!(
+        get(&s, "/api/state").await["rois"]
+            .as_array()
+            .unwrap()
+            .len(),
+        2
+    );
 }
 
 #[tokio::test]
@@ -176,7 +187,13 @@ async fn a_region_with_no_area_is_refused() {
     let s = shared();
     // There is no sensible clamp for zero area, so it is a refusal rather than
     // a region that silently becomes 1% of the frame.
-    let r = call(&s, "POST", "/api/roi", r#"{"name":"Bad","rect":[0.5,0.5,0,0]}"#).await;
+    let r = call(
+        &s,
+        "POST",
+        "/api/roi",
+        r#"{"name":"Bad","rect":[0.5,0.5,0,0]}"#,
+    )
+    .await;
     assert_eq!(r["ok"], false, "{r}");
     assert!(r["error"].as_str().unwrap().contains("at least"), "{r}");
 }
@@ -198,13 +215,22 @@ async fn a_region_pushed_off_the_edge_is_clamped_back_in() {
     let v = get(&s, "/api/state").await;
     let rect = v["rois"][2]["rect"].as_array().unwrap();
     assert!((rect[0].as_f64().unwrap() - 0.6).abs() < 1e-9, "{rect:?}");
-    assert!((rect[2].as_f64().unwrap() - 0.4).abs() < 1e-9, "size must survive");
+    assert!(
+        (rect[2].as_f64().unwrap() - 0.4).abs() < 1e-9,
+        "size must survive"
+    );
 }
 
 #[tokio::test]
 async fn an_outputs_idle_fill_and_fit_can_be_set() {
     let s = shared();
-    let r = call(&s, "POST", "/api/output/1", r#"{"idle":"bars","fit":"fill"}"#).await;
+    let r = call(
+        &s,
+        "POST",
+        "/api/output/1",
+        r#"{"idle":"bars","fit":"fill"}"#,
+    )
+    .await;
     assert_eq!(r["ok"], true, "{r}");
     let v = get(&s, "/api/state").await;
     assert_eq!(v["outputs"][0]["idle"], "bars");

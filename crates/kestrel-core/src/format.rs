@@ -118,13 +118,7 @@ impl Default for VideoFormat {
 
 impl fmt::Display for VideoFormat {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}{}{}",
-            self.size.h,
-            self.scan.suffix(),
-            self.rate
-        )
+        write!(f, "{}{}{}", self.size.h, self.scan.suffix(), self.rate)
     }
 }
 

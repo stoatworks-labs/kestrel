@@ -154,7 +154,12 @@ fn find_sdk() -> Option<PathBuf> {
             // wall of compiler errors.
             let version = sdk_version(&dir).unwrap_or((0, 0));
             if version < MIN_SDK {
-                rejected.push(format!("{} (SDK {}.{})", dir.display(), version.0, version.1));
+                rejected.push(format!(
+                    "{} (SDK {}.{})",
+                    dir.display(),
+                    version.0,
+                    version.1
+                ));
                 continue;
             }
             if best.as_ref().is_none_or(|(v, _)| version > *v) {

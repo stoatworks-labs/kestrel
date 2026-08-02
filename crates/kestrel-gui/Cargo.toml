@@ -1,19 +1,14 @@
 [package]
-name = "kestrel-app"
-description = "Kestrel's runtime: the frame-path thread that ties capture, the GPU and the outputs together, plus the CLI."
+name = "kestrel-gui"
+description = "Kestrel's operator window: a large input preview with draggable regions, a row of output previews, and a crosspoint matrix."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
-build = "build.rs"
-
-[lib]
-name = "kestrel_app"
-path = "src/lib.rs"
 
 [[bin]]
-name = "kestrel"
+name = "kestrel-gui"
 path = "src/main.rs"
 
 [dependencies]
@@ -21,17 +16,11 @@ kestrel-core = { path = "../kestrel-core" }
 kestrel-render = { path = "../kestrel-render" }
 kestrel-decklink = { path = "../kestrel-decklink" }
 kestrel-control = { path = "../kestrel-control" }
+kestrel-app = { path = "../kestrel-app" }
 diag = { path = "../diag" }
 
+egui.workspace = true
+eframe = "0.35"
 anyhow.workspace = true
-parking_lot.workspace = true
-pollster.workspace = true
-serde.workspace = true
-serde_json.workspace = true
 tokio.workspace = true
 tracing.workspace = true
-tracing-subscriber.workspace = true
-clap = { version = "4", features = ["derive"] }
-
-[build-dependencies]
-cc = "1"

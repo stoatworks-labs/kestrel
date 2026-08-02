@@ -62,6 +62,7 @@ fn main() -> Result<()> {
             .with_default_filter("warn,kestrel=info,kestrel_app=info"),
     )
     .ok();
+    kestrel_app::keep_awake();
     let cli = Cli::parse();
     match cli.command.unwrap_or(Command::Run(RunArgs {
         show: None,
@@ -95,8 +96,8 @@ fn devices() -> Result<()> {
     }
     println!();
     println!(
-        "{:<20}  {:>18}  {:>3}  {:<6}  {:<7}  {}",
-        "name", "persistent id", "sub", "in/out", "duplex", "state"
+        "{:<20}  {:>18}  {:>3}  {:<6}  {:<7}  state",
+        "name", "persistent id", "sub", "in/out", "duplex"
     );
     for d in &devices {
         println!(

@@ -534,8 +534,20 @@ impl Engine {
             .get(&key)
             .is_none_or(|p| p.size != size || p.generation != self.binding_generation);
         if stale {
-            let p = make_preview(&self.gpu, &self.crop.layout, &self.sampler, source_view, size);
-            self.previews.insert(key, PreviewTarget { generation: self.binding_generation, ..p });
+            let p = make_preview(
+                &self.gpu,
+                &self.crop.layout,
+                &self.sampler,
+                source_view,
+                size,
+            );
+            self.previews.insert(
+                key,
+                PreviewTarget {
+                    generation: self.binding_generation,
+                    ..p
+                },
+            );
         }
         let p = &self.previews[&key];
 

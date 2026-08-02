@@ -337,7 +337,11 @@ impl Show {
             .output(output)
             .ok_or(ShowError::NoSuchOutput(output))?
             .assigned;
-        let next = if current == Some(roi) { None } else { Some(roi) };
+        let next = if current == Some(roi) {
+            None
+        } else {
+            Some(roi)
+        };
         self.route(output, next)
     }
 

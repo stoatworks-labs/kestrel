@@ -72,8 +72,7 @@ pub fn save(show: &Show, path: &Path) -> Result<()> {
     // where a working one used to be.
     let tmp = path.with_extension("json.tmp");
     std::fs::write(&tmp, json).with_context(|| format!("could not write {}", tmp.display()))?;
-    std::fs::rename(&tmp, path)
-        .with_context(|| format!("could not replace {}", path.display()))?;
+    std::fs::rename(&tmp, path).with_context(|| format!("could not replace {}", path.display()))?;
     Ok(())
 }
 

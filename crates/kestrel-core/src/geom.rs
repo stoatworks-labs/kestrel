@@ -326,7 +326,10 @@ mod tests {
     #[test]
     fn aspect_lock_on_the_full_frame_is_a_no_op_at_matching_aspect() {
         let r = NormRect::FULL.with_aspect(16.0 / 9.0, HD);
-        assert!((r.w - 1.0).abs() < 1e-9 && (r.h - 1.0).abs() < 1e-9, "{r:?}");
+        assert!(
+            (r.w - 1.0).abs() < 1e-9 && (r.h - 1.0).abs() < 1e-9,
+            "{r:?}"
+        );
     }
 
     #[test]
@@ -381,7 +384,11 @@ mod tests {
         let got = p.src.aspect(HD);
         assert!((got - 16.0 / 9.0).abs() < 1e-9, "src aspect {got}");
         // It crops the *long* axis of the region, so the crop is inside it.
-        assert!(p.src.h < r.h + 1e-12 && p.src.w <= r.w + 1e-12, "{:?}", p.src);
+        assert!(
+            p.src.h < r.h + 1e-12 && p.src.w <= r.w + 1e-12,
+            "{:?}",
+            p.src
+        );
     }
 
     #[test]

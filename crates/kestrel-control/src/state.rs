@@ -377,7 +377,10 @@ mod tests {
         s.set_runtime(|r| r.input_live = true);
         let r0 = s.revision();
         s.set_runtime(|r| r.input_live = false);
-        assert!(s.revision() > r0, "input lock is exactly what tally cares about");
+        assert!(
+            s.revision() > r0,
+            "input lock is exactly what tally cares about"
+        );
     }
 
     #[test]
@@ -397,7 +400,11 @@ mod tests {
         // Kill the outputs: still routed, no longer on air.
         s.edit(|show| show.outputs_enabled = false);
         let v = s.snapshot();
-        assert_eq!(v.outputs[0].assigned, Some(roi), "the route survives a mute");
+        assert_eq!(
+            v.outputs[0].assigned,
+            Some(roi),
+            "the route survives a mute"
+        );
         assert!(
             v.outputs.iter().all(|o| o.on_air == "muted"),
             "every output must report muted, not just the routed one"

@@ -71,7 +71,11 @@ fn last_error() -> String {
 }
 
 fn c_name(bytes: &[c_char; NAME_MAX]) -> String {
-    unsafe { CStr::from_ptr(bytes.as_ptr()).to_string_lossy().into_owned() }
+    unsafe {
+        CStr::from_ptr(bytes.as_ptr())
+            .to_string_lossy()
+            .into_owned()
+    }
 }
 
 pub fn available() -> bool {

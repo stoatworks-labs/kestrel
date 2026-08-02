@@ -116,6 +116,10 @@ fn run(
     previews: Arc<Mutex<Previews>>,
     stop: Arc<AtomicBool>,
 ) -> Result<()> {
+    // First thing this thread does. See `platform.rs`: without it a window that
+    // is merely covered by another app costs most of the frame rate.
+    crate::platform::this_thread_is_realtime();
+
     let (mut format, initial_input) = {
         let show = shared.show();
         (show.output_format, show.input_size)
@@ -164,7 +168,7 @@ fn run(
     while !stop.load(Ordering::Relaxed) {
         tick += 1;
         let period = frame_period(format);
-        let deadline = start + period.mul_f64(tick as f64);
+        let deadline = start + elapsed_at_tick(format, tick);
 
         // --- reconfigure to match the show --------------------------------
         let (plan, want_format, scaling, devices) = {
@@ -196,7 +200,7 @@ fn run(
             let size = syn.size();
             let row = syn.row_bytes();
             engine.set_input_size(size);
-            engine.upload_input(syn.next(), row)?;
+            engine.upload_input(syn.next_frame(), row)?;
             last_good = Instant::now();
         } else if let Some(frame) = slot.take_newer_than(last_seq) {
             last_seq = frame.seq;
@@ -252,8 +256,8 @@ fn run(
         if Instant::now() >= preview_due {
             let p = engine.capture_previews(config.thumb_height);
             *previews.lock() = p;
-            preview_due = Instant::now()
-                + Duration::from_secs_f64(1.0 / config.preview_hz.clamp(1.0, 60.0));
+            preview_due =
+                Instant::now() + Duration::from_secs_f64(1.0 / config.preview_hz.clamp(1.0, 60.0));
         }
 
         // --- pace -----------------------------------------------------------
@@ -298,9 +302,8 @@ fn reconcile_playbacks(
         .filter_map(|(id, d)| d.as_ref().map(|d| (*id, d.persistent_id)))
         .collect();
 
-    playbacks.retain(|id, slot| {
-        wanted.get(id) == Some(&slot.persistent_id) && slot.format == format
-    });
+    playbacks
+        .retain(|id, slot| wanted.get(id) == Some(&slot.persistent_id) && slot.format == format);
 
     for (id, persistent_id) in wanted {
         if playbacks.contains_key(&id) {
@@ -327,13 +330,34 @@ fn reconcile_playbacks(
     }
 }
 
+/// How long one frame lasts.
+///
+/// Computed from the rational, not from `1.0 / rate.as_f64()`. The reciprocal
+/// of an already-rounded float is a second rounding, and this number gets
+/// multiplied by the tick count — so the error compounds into real drift over a
+/// show. Used for the sleep and the watchdog, both of which only need to be
+/// roughly right.
 fn frame_period(f: VideoFormat) -> Duration {
-    let fps = f.rate.as_f64();
-    if fps <= 0.0 {
-        Duration::from_millis(20)
-    } else {
-        Duration::from_secs_f64(1.0 / fps)
+    if f.rate.num == 0 || f.rate.den == 0 {
+        return Duration::from_millis(20);
     }
+    let nanos = (1_000_000_000u128 * f.rate.den as u128) / f.rate.num as u128;
+    Duration::from_nanos(nanos as u64)
+}
+
+/// Time from tick zero to tick `n`, exactly.
+///
+/// The deadline is computed from the rational **at each tick** rather than as
+/// `period * n`. A frame period is not a whole number of nanoseconds — 1001/60000
+/// s is 16683333.33 ns — so `period * n` truncates once and then multiplies the
+/// truncation, drifting about 1.2 ms per hour at 59.94. Doing the division last
+/// keeps every deadline within a nanosecond of correct for the life of a show.
+fn elapsed_at_tick(f: VideoFormat, n: u64) -> Duration {
+    if f.rate.num == 0 || f.rate.den == 0 {
+        return Duration::from_millis(20) * (n.min(u32::MAX as u64) as u32);
+    }
+    let nanos = (1_000_000_000u128 * f.rate.den as u128 * n as u128) / f.rate.num as u128;
+    Duration::from_nanos(nanos.min(u64::MAX as u128) as u64)
 }
 
 #[cfg(test)]
@@ -342,11 +366,42 @@ mod tests {
     use kestrel_core::Scan;
 
     #[test]
-    fn frame_periods_are_exact_for_the_awkward_rates() {
+    fn frame_periods_are_right_to_the_nanosecond() {
+        // A `Duration` is nanosecond-resolution, so a period that is not a
+        // whole number of nanoseconds cannot be exact — 1001/60000 s is
+        // 16683333.33 ns. One nanosecond is the honest bound.
         let p = frame_period(VideoFormat::new(1920, 1080, 60000, 1001, Scan::Progressive));
-        assert!((p.as_secs_f64() - 1001.0 / 60000.0).abs() < 1e-12);
+        assert_eq!(p.as_nanos(), 16_683_333);
         let p = frame_period(VideoFormat::new(1920, 1080, 50, 1, Scan::Progressive));
-        assert!((p.as_secs_f64() - 0.02).abs() < 1e-12);
+        assert_eq!(p.as_nanos(), 20_000_000, "50p is exact");
+    }
+
+    #[test]
+    fn an_hour_of_ticks_does_not_drift() {
+        // The reason the deadline is computed from the rational at each tick
+        // rather than as `period * n`. At 59.94, `period * n` loses 0.33 ns per
+        // tick, which over an hour is more than a millisecond — invisible in a
+        // ten-minute test and a drained card buffer in a long show.
+        let f = VideoFormat::new(1920, 1080, 60000, 1001, Scan::Progressive);
+        let ticks = 60u64 * 60 * 60000 / 1001; // one hour
+        let want = 1001.0 * ticks as f64 / 60000.0;
+        let got = elapsed_at_tick(f, ticks).as_secs_f64();
+        assert!((got - want).abs() < 1e-6, "drifted {} s", got - want);
+
+        let naive = frame_period(f).mul_f64(ticks as f64).as_secs_f64();
+        assert!(
+            (naive - want).abs() > (got - want).abs(),
+            "the exact form must beat the naive one, or this is pointless"
+        );
+    }
+
+    #[test]
+    fn tick_zero_is_zero_and_a_broken_rate_does_not_overflow() {
+        let f = VideoFormat::new(1920, 1080, 50, 1, Scan::Progressive);
+        assert_eq!(elapsed_at_tick(f, 0), Duration::ZERO);
+        assert_eq!(elapsed_at_tick(f, 50).as_secs(), 1);
+        let broken = VideoFormat::new(1920, 1080, 0, 1, Scan::Progressive);
+        assert!(elapsed_at_tick(broken, u64::MAX) > Duration::ZERO);
     }
 
     #[test]

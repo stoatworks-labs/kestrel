@@ -4,7 +4,7 @@
 //! skipping. A GPU test that quietly skips is a GPU test that has never run.
 
 use kestrel_core::{
-    FitMode, NormRect, OutputId, OutputPlan, Pattern, PlanSource, Scan, ScalingFilter, Size,
+    FitMode, NormRect, OutputId, OutputPlan, Pattern, PlanSource, ScalingFilter, Scan, Size,
     VideoFormat,
 };
 use kestrel_render::pattern::{
@@ -94,13 +94,17 @@ fn decode_puts_luma_in_the_right_column() {
     // than like a bug. A hard vertical edge catches it.
     let mut e = engine(Size::new(64, 8), Size::new(64, 8));
     let size = Size::new(64, 8);
-    let frame = kestrel_render::pattern::build_uyvy(size, |x, _| {
-        if x < 32 {
-            [255, 255, 255]
-        } else {
-            [0, 0, 0]
-        }
-    });
+    let frame =
+        kestrel_render::pattern::build_uyvy(
+            size,
+            |x, _| {
+                if x < 32 {
+                    [255, 255, 255]
+                } else {
+                    [0, 0, 0]
+                }
+            },
+        );
     e.upload_input(&frame, row_bytes(size)).unwrap();
     let rgba = e.read_input_rgba().unwrap();
 
@@ -295,7 +299,11 @@ fn the_bars_idle_really_is_bars() {
         let x = (bar * OUT.w / 8) + OUT.w / 16;
         let i = 128 * stride + (x as usize / 2) * 4;
         let want = rgb_to_ycbcr(BARS_75[bar as usize])[0];
-        let got_y = if x % 2 == 0 { frame[i + 1] } else { frame[i + 3] };
+        let got_y = if x.is_multiple_of(2) {
+            frame[i + 1]
+        } else {
+            frame[i + 3]
+        };
         let d = got_y as i32 - want as i32;
         assert!(d.abs() <= 3, "bar {bar}: Y {got_y} want {want}");
     }
@@ -356,11 +364,11 @@ fn the_pack_survives_a_round_trip_through_the_decoder() {
     back.upload_input(&got[0].1, got[0].2).unwrap();
     let rgba = back.read_input_rgba().unwrap();
 
-    for bar in 0..8usize {
+    for (bar, want) in BARS_75.iter().enumerate() {
         let fx = (bar as f64 + 0.5) / 8.0;
         near(
             px(&rgba, OUT, fx, 0.5),
-            BARS_75[bar],
+            *want,
             6,
             &format!("bar {bar} after a full round trip"),
         );
@@ -414,7 +422,7 @@ fn changing_the_input_raster_does_not_leave_a_stale_binding() {
 fn a_short_frame_is_refused_rather_than_read_past_the_end() {
     let mut e = engine(IN, OUT);
     let err = e
-        .upload_input(&vec![0u8; 16], row_bytes(IN))
+        .upload_input(&[0u8; 16], row_bytes(IN))
         .expect_err("a truncated capture buffer must not be uploaded");
     assert!(err.to_string().contains("short frame"), "{err}");
 }
