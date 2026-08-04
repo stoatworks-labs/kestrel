@@ -45,7 +45,7 @@ crossbeam-channel = "0.5"
 
 axum = { version = "0.7", features = ["ws"] }
 tokio = { version = "1", features = ["full"] }
-tower-http = { version = "0.5", features = ["cors"] }
+tower-http = { version = "0.7", features = ["cors"] }
 
 [profile.release]
 # Live video: a debug-assert-free, optimised build is the only one worth timing.
