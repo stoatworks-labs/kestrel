@@ -1,5 +1,13 @@
 # Kestrel
 
+> **AI-assisted project.** This codebase was created with [Claude](https://claude.com/claude-code)
+> (Anthropic), directed and reviewed by a human author. The GPU path is verified
+> by pixel readback, the control API end to end, and the Companion module
+> against a really-running Kestrel. **No DeckLink has ever been connected to this
+> code** — every line of SDI is written against the SDK headers and is unproven
+> here, and Windows and Linux have never been run. See
+> [What is verified, and what is not](#what-is-verified-and-what-is-not).
+
 One wide shot in, several tighter shots out.
 
 Kestrel takes a single video input — typically a locked-off wide of a stage —
