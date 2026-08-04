@@ -155,3 +155,7 @@ The honest version is in [`AGENTS.md`](AGENTS.md). The short one:
 Network video protocols, Spout and Syphon, and fullscreen GPU output for a
 machine with no DeckLink in it. The output abstraction was built with those in
 mind — an output picks a target, and SDI is only the first one.
+
+<!-- attributions:start -->
+This project is built on other people's work — see [ATTRIBUTIONS.md](ATTRIBUTIONS.md).
+<!-- attributions:end -->
