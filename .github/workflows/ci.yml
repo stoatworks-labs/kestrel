@@ -1,0 +1,45 @@
+name: ci
+
+# Until this existed the repo had no workflow with a `pull_request` trigger at
+# all — only a tag-driven release — so Dependabot bumps arrived with no status
+# check to gate a merge on and simply accumulated. Every open bump here is a
+# cargo one (wgpu, axum, tower-http, pollster), which is what this exercises.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      # kestrel-render talks to a real GPU. A hosted runner has none, so wgpu
+      # needs lavapipe to find an adapter at all.
+      #
+      # kestrel-decklink needs nothing: the Blackmagic SDK is licence-gated and
+      # not vendored, so the crate builds without it and reports itself
+      # unavailable — deliberately, so "not compiled in" stays distinguishable
+      # from "no card found".
+      - name: install a software Vulkan adapter
+        run: sudo apt-get update && sudo apt-get install -y mesa-vulkan-drivers
+
+      - name: fmt
+        run: cargo fmt --all -- --check
+
+      - name: clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: test
+        run: cargo test
