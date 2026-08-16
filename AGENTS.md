@@ -84,6 +84,17 @@ have existed since 11.0, which reads like a broken shim. `build.rs` now checks
 every candidate's `DeckLinkAPIVersion.h` and takes the newest, rejecting
 anything below 11.0 with a reason.
 
+**A DeckLink output keeps transmitting after its process exits, so killing the
+transmitter does not test input loss.** On a loopback rig the far end stays
+genuinely *locked* to valid 1080p50 black long after the process that opened the
+output is gone — `bmdDeckLinkStatusVideoInputSignalLocked` reads YES and the
+frames are not flagged `bmdFrameHasNoInputSource`, because none of that is a
+lie. This reads exactly like a broken input-loss watchdog and invites you to
+"fix" correct code; a whole session went into disproving it here. Both flags are
+reliable. To test signal loss, point the input at a sub-device with **nothing
+plugged into it** — the only genuinely dead source on a one-cable rig, and it
+reports `signal-locked=no` with zero good frames.
+
 **Card profiles.** A multi-sub-device card lists *all* its sub-devices whatever
 profile it is in, and the switched-off ones offer no display modes at all — an
 open attempt on one looks exactly like broken hardware. `Device::active` and
@@ -129,16 +140,27 @@ Keep this section honest. "Compiles" is never "works".
 - **49.99 fps sustained at 1080p50** with the GUI open and occluded, zero
   fell-behind warnings. 50.20 fps headless.
 - 111 Rust tests, clippy clean.
+- **SDI, on a real DeckLink Duo 2** (2026-08-16, Mercury Helios 3S Thunderbolt
+  chassis, Desktop Video 16.0.1, ports 1↔4 cabled as a loopback):
+  - **Output.** Kestrel rendered bars to port 1 and `weblinked`'s
+    `tools/sdi_probe.mm` — an independent BT.709 reference, deliberately not
+    sharing code with this app — read all eight bars back correctly off the
+    wire at 1920x1080, black at Y=16. PASS. That is scheduled playback,
+    pre-roll, the frame pool, stride and the 8-bit YUV packing, measured.
+  - **Enumeration.** `kestrel devices` reports four sub-devices, all active,
+    half-duplex, agreeing exactly with `tools/dl_scan.mm`. `kestrel init` wrote
+    real persistent ids.
+  - **Capture.** Reports live at 1920x1080 off a real input.
+  - **Input loss.** Fed an *unconnected* sub-device, Kestrel reports
+    `live: false` and the output goes on transmitting legal black — 26 frames
+    received, never the last good frame, never stopped.
+  - **The global kill, on the wire.** Engaged: 25 frames still flowing, all
+    black, crosspoint intact. Released: bars back, PASS.
 
 **Written, compiled, never run against hardware — do not describe as working:**
 
-- **Every line of SDI.** No DeckLink has ever been connected to this code.
-  Capture, format autodetection, scheduled playback, pre-roll depth, the frame
-  pool, stride handling and the profile reporting are all unproven here. The
-  sequence follows one measured on a real Duo 2 in
-  `weblinked/docs/04-verification.md` §19 (buffered held at 6, zero drops over
-  two minutes at 1080p50), and the pixel format is 8-bit YUV throughout, which
-  that card supports at every rate — but that is inheritance, not evidence.
+- **Format autodetection and mode changes.** Everything above ran at a fixed
+  1080p50. A second cable across ports 2↔3 is what this needs.
 - **The GUI's widgets have never been clicked.** The window opens, runs, renders
   and serves; its layout has not been visually confirmed, because
   `screencapture` and window-raising are unreliable on this Mac (two attempts,
