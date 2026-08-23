@@ -271,9 +271,9 @@ fn a_muted_or_unrouted_output_carries_legal_black_not_zero() {
         let frame = &got[0].1;
         // Y=16, C=128 everywhere. Super-black (Y=0) is what you get if the
         // conversion is skipped, and some switchers clamp it and some flag it.
-        for (i, chunk) in frame.chunks_exact(4).enumerate().take(4096) {
+        for (i, chunk) in frame.as_chunks::<4>().0.iter().enumerate().take(4096) {
             assert_eq!(
-                chunk,
+                *chunk,
                 [128, 16, 128, 16],
                 "{source:?} macropixel {i} is not legal black"
             );

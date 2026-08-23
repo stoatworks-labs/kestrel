@@ -178,7 +178,7 @@ mod tests {
         let f = solid_uyvy(SD, [191, 0, 0]);
         let first: [u8; 4] = f[0..4].try_into().unwrap();
         assert!(
-            f.chunks_exact(4).all(|c| c == first),
+            f.as_chunks::<4>().0.iter().all(|c| *c == first),
             "a solid frame must be one macropixel repeated"
         );
     }
