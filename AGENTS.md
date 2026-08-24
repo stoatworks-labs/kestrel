@@ -180,3 +180,10 @@ fullscreen GPU output, audio of any kind, per-output format override.
 - `UnMapper` — the same architectural shape (render once, every output is a
   crop) and the wgpu/egui traps.
 - `companion-module-srt-router` — the house pattern for a Companion module.
+
+## Notes
+
+`docs/NOTES.md` carries this repo's working notes — current status, decisions
+already made, and the traps that have actually bitten. Read it before changing
+anything non-obvious. Cross-cutting fleet knowledge lives in
+[fleet-notes](https://github.com/stoatworks-labs/fleet-notes).
