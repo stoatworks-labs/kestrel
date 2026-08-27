@@ -29,7 +29,7 @@ repository = "https://github.com/stoatworks-labs/kestrel"
 egui = "0.35.0"
 egui-wgpu = "0.35.0"
 egui-winit = "0.35.0"
-wgpu = "30"
+wgpu = "29"
 winit = "0.30.13"
 
 serde = { version = "1", features = ["derive"] }
@@ -39,11 +39,11 @@ thiserror = "2"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 bytemuck = { version = "1", features = ["derive"] }
-pollster = "1.0"
+pollster = "0.4"
 parking_lot = "0.12"
 crossbeam-channel = "0.5"
 
-axum = { version = "0.8", features = ["ws"] }
+axum = { version = "0.7", features = ["ws"] }
 tokio = { version = "1", features = ["full"] }
 tower-http = { version = "0.7", features = ["cors"] }
 
