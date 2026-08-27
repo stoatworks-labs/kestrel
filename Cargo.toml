@@ -29,7 +29,7 @@ repository = "https://github.com/stoatworks-labs/kestrel"
 egui = "0.35.0"
 egui-wgpu = "0.35.0"
 egui-winit = "0.35.0"
-wgpu = "29"
+wgpu = "30"
 winit = "0.30.13"
 
 serde = { version = "1", features = ["derive"] }
