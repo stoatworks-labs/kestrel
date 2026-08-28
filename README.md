@@ -3,9 +3,11 @@
 > **AI-assisted project.** This codebase was created with [Claude](https://claude.com/claude-code)
 > (Anthropic), directed and reviewed by a human author. The GPU path is verified
 > by pixel readback, the control API end to end, and the Companion module
-> against a really-running Kestrel. **No DeckLink has ever been connected to this
-> code** — every line of SDI is written against the SDK headers and is unproven
-> here, and Windows and Linux have never been run. See
+> against a really-running Kestrel. **SDI is hardware-verified** (2026-08-16) on
+> a real DeckLink Duo 2 at a fixed 1080p50 — output, enumeration, capture, input
+> loss and the global kill, all measured on the wire. **Format autodetect and
+> mode changes were never exercised**, the GUI's widgets have never been clicked,
+> and Windows and Linux have never been built or run. See
 > [What is verified, and what is not](#what-is-verified-and-what-is-not).
 
 One wide shot in, several tighter shots out.
@@ -144,11 +146,20 @@ The honest version is in [`AGENTS.md`](AGENTS.md). The short one:
   including a raster whose rows need padding); the control API end to end; the
   Companion module against a really-running Kestrel; 49.99 fps sustained at
   1080p50 with the GUI open.
-- **Never touched hardware:** every line of SDI. No DeckLink has been connected
-  to this code. Capture, playback, pre-roll, format detection and profile
-  handling are written against SDK 12.2 headers and follow a sequence proven on
-  a Duo 2 in a sibling project — but they are unproven here.
-- **Never run:** Windows and Linux.
+- **Verified on hardware (2026-08-16):** SDI, on a real DeckLink Duo 2 in a
+  Mercury Helios 3S Thunderbolt chassis, ports 1↔4 cabled as a loopback, at a
+  fixed 1080p50. Output PASSES against an independently-written BT.709 probe —
+  all eight bars read back correctly off the wire at 1920x1080, black at Y=16 —
+  which puts scheduled playback, pre-roll, the frame pool, stride and 8-bit YUV
+  packing on real SDI. Enumeration and capture work; input loss gives legal
+  black and never the last good frame; the global kill mutes on the wire with
+  the crosspoint intact.
+- **Never exercised:** format autodetection and mode changes. Everything above
+  ran at one fixed raster; a second cable across ports 2↔3 is what that needs.
+- **Never clicked:** the GUI's widgets. The window opens, runs, renders and
+  serves, and the logic underneath is unit-tested, but the layout has not been
+  visually confirmed.
+- **Never run:** Windows and Linux. Never built either.
 
 ## Later
 

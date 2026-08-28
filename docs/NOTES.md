@@ -7,7 +7,7 @@ person and dated by when each thing was learned — that date is usually the use
 Cross-cutting notes that are not specific to this repo live in
 [fleet-notes](https://github.com/stoatworks-labs/fleet-notes).
 
-*Kestrel — DeckLink ROI router: crops of one wide shot scaled back out to SDI outputs. PUBLIC MIT, Rust/wgpu/egui. Every line of SDI is unverified*
+*Kestrel — DeckLink ROI router: crops of one wide shot scaled back out to SDI outputs. PUBLIC MIT, Rust/wgpu/egui. SDI hardware-verified on a Duo 2 (2026-08-16) at a fixed 1080p50; format autodetect, the GUI's widgets, Windows and Linux still unverified*
 
 **Kestrel** (`~/Projects/kestrel`, PUBLIC MIT, started 2026-08-02) takes one
 video input — a stage wide shot — lets you draw any number of **regions of
