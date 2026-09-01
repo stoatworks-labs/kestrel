@@ -26,7 +26,7 @@ repository = "https://github.com/stoatworks-labs/kestrel"
 # and make sure exactly one version comes back. (A bare `grep wgpu` also matches
 # the `egui-wgpu` suffix and looks like a conflict when there isn't one.)
 [workspace.dependencies]
-egui = "0.35.0"
+egui = "0.36.1"
 egui-wgpu = "0.35.0"
 egui-winit = "0.35.0"
 wgpu = "29"
