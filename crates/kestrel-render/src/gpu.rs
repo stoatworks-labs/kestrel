@@ -49,6 +49,9 @@ impl Gpu {
                 power_preference: wgpu::PowerPreference::HighPerformance,
                 compatible_surface: surface,
                 force_fallback_adapter: false,
+                // wgpu 30 added this; the default (no bucketing) is what the
+                // previous behaviour was.
+                ..Default::default()
             })
             .await
             .map_err(|e| anyhow!("no suitable GPU adapter: {e}"))?;

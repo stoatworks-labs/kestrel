@@ -452,7 +452,7 @@ impl Engine {
                 timeout: None,
             })?;
             {
-                let view = slice.get_mapped_range();
+                let view = slice.get_mapped_range()?;
                 let row = t.row_bytes as usize;
                 let padded = t.padded_row as usize;
                 if row == padded {
@@ -915,7 +915,7 @@ pub fn read_texture_rgba(gpu: &Gpu, tex: &wgpu::Texture, size: Size) -> Result<V
         submission_index: None,
         timeout: None,
     })?;
-    let view = slice.get_mapped_range();
+    let view = slice.get_mapped_range()?;
     let mut out = vec![0u8; (row * size.h) as usize];
     for y in 0..size.h as usize {
         let s = y * padded as usize;

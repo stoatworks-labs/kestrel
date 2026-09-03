@@ -26,10 +26,10 @@ repository = "https://github.com/stoatworks-labs/kestrel"
 # and make sure exactly one version comes back. (A bare `grep wgpu` also matches
 # the `egui-wgpu` suffix and looks like a conflict when there isn't one.)
 [workspace.dependencies]
-egui = "0.35.0"
-egui-wgpu = "0.35.0"
-egui-winit = "0.35.0"
-wgpu = "29"
+egui = "0.36.0"
+egui-wgpu = "0.36.0"
+egui-winit = "0.36.0"
+wgpu = "30"
 winit = "0.30.13"
 
 serde = { version = "1", features = ["derive"] }
@@ -39,11 +39,11 @@ thiserror = "2"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 bytemuck = { version = "1", features = ["derive"] }
-pollster = "0.4"
+pollster = "1"
 parking_lot = "0.12"
 crossbeam-channel = "0.5"
 
-axum = { version = "0.7", features = ["ws"] }
+axum = { version = "0.8", features = ["ws"] }
 tokio = { version = "1", features = ["full"] }
 tower-http = { version = "0.7", features = ["cors"] }
 

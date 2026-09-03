@@ -28,6 +28,8 @@ use std::time::Duration;
 /// the button; slow enough to be free.
 const PUSH_INTERVAL: Duration = Duration::from_millis(200);
 
+// axum 0.8 takes capture groups as `{id}`; `:id` now panics at router build
+// time rather than silently not matching.
 pub fn router(shared: Arc<Shared>) -> Router {
     Router::new()
         .route("/api/health", get(health))
@@ -35,9 +37,9 @@ pub fn router(shared: Arc<Shared>) -> Router {
         .route("/api/route", post(route))
         .route("/api/output/enable", post(enable))
         .route("/api/roi", post(create_roi))
-        .route("/api/roi/:id", post(update_roi))
-        .route("/api/roi/:id", delete(delete_roi))
-        .route("/api/output/:id", post(update_output))
+        .route("/api/roi/{id}", post(update_roi))
+        .route("/api/roi/{id}", delete(delete_roi))
+        .route("/api/output/{id}", post(update_output))
         .route("/ws", get(ws_upgrade))
         .layer(tower_http::cors::CorsLayer::permissive())
         .with_state(shared)
@@ -199,7 +201,9 @@ async fn push_state(mut socket: WebSocket, shared: Arc<Shared>) {
         let Ok(text) = serde_json::to_string(&shared.snapshot()) else {
             continue;
         };
-        if socket.send(Message::Text(text)).await.is_err() {
+        // axum 0.8 carries ws text as Utf8Bytes rather than String; the
+        // conversion is a move, not a copy.
+        if socket.send(Message::Text(text.into())).await.is_err() {
             return; // the surface went away
         }
     }
