@@ -28,6 +28,10 @@ kestrel hovers over a wide field and picks out one thing at a time; so does this
 Rust, wgpu, egui. macOS, Windows and Linux from one source; only macOS has ever
 been run. MIT.
 
+![Kestrel's operator window on its synthetic bars: one region drawn on the wide, four outputs black with no DeckLink present, the control server listening](docs/screenshots/operator-window.png)
+
+<sub>The operator window on its own synthetic bars — one region drawn on the wide, four outputs black because no DeckLink is in this machine, the control server listening on 9720. The build on this Mac, captured by window; the first time the layout has been looked at rather than served.</sub>
+
 ## The rule everything else follows
 
 **Every output produces a frame, every frame, always.**
