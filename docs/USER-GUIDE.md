@@ -7,6 +7,10 @@ number of **regions of interest** on it, and sends each region back out of a Bla
 cropped and scaled to the output raster. A kestrel hovers over a wide field and picks out one thing
 at a time; so does this.
 
+![The operator window on its own synthetic bars — one region drawn on the wide, four outputs black because no DeckLink is in this machine, the control server l…](screenshots/operator-window.png)
+
+*The operator window on its own synthetic bars — one region drawn on the wide, four outputs black because no DeckLink is in this machine, the control server listening. Captured from the build on this Mac by window: the first time the layout has been looked at rather than served.*
+
 > **Before you rely on this:** the GPU path is verified by **pixel readback** (14 tests, including
 > a raster whose rows need padding), the control API end to end, and the Companion module against a
 > really-running Kestrel — with 49.99 fps sustained at 1080p50 with the GUI open.
