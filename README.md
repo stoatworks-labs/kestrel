@@ -1,56 +1,53 @@
 # Kestrel
 
 > **AI-assisted project.** This codebase was created with [Claude](https://claude.com/claude-code)
-> (Anthropic), directed and reviewed by a human author. The GPU path is verified
-> by pixel readback, the control API end to end, and the Companion module
-> against a really-running Kestrel. **SDI is hardware-verified** (2026-08-16) on
-> a real DeckLink Duo 2 at a fixed 1080p50 — output, enumeration, capture, input
-> loss and the global kill, all measured on the wire. **Format autodetect and
-> mode changes were never exercised**, the GUI's widgets have never been clicked,
-> and Windows and Linux have never been built or run. See
+> (Anthropic), directed and reviewed by a human author. SDI has been checked on real
+> hardware (a DeckLink Duo 2 at a fixed 1080p50, 2026-08-16), and the GPU path, the
+> control API and the Companion module are all tested. Format autodetect and mode
+> changes have never been exercised, the GUI's widgets have never been clicked, and
+> Windows and Linux have never been built or run. The details are under
 > [What is verified, and what is not](#what-is-verified-and-what-is-not).
 
 One wide shot in, several tighter shots out.
 
-Kestrel takes a single video input — typically a locked-off wide of a stage —
-lets you draw any number of **regions of interest** on it, and sends each region
-back out of a Blackmagic DeckLink, cropped and scaled to the output raster. A
-kestrel hovers over a wide field and picks out one thing at a time; so does this.
+Kestrel takes a single video input (usually a locked-off wide of a stage), lets you
+draw as many **regions of interest** on it as you like, and sends each region back
+out of a Blackmagic DeckLink, cropped and scaled to the output raster. A kestrel
+hovers over a wide field and picks out one thing at a time, and so does this.
 
 - **A large preview** of the input, with the regions drawn on it and draggable.
-- **A row of output previews** along the bottom, each showing exactly what is on
-  that wire, with a **scale percentage** saying how far the source is being
-  blown up.
-- **A crosspoint matrix** — regions down the side, outputs across the top — on
-  its own tab.
-- **A Companion module**, so the whole thing drives from a Stream Deck.
+- **A row of output previews** along the bottom, each showing just what's on that
+  wire, with a **scale percentage** saying how far the source is being blown up.
+- **A crosspoint matrix** (regions down the side, outputs across the top) on its
+  own tab.
+- **A Companion module**, so the whole thing runs from a Stream Deck.
 
-Rust, wgpu, egui. macOS, Windows and Linux from one source; only macOS has ever
-been run. MIT.
+Rust, wgpu, egui. macOS, Windows and Linux from one source, though only macOS has
+ever been run. MIT.
 
 ![Kestrel's operator window on its synthetic bars: one region drawn on the wide, four outputs black with no DeckLink present, the control server listening](docs/screenshots/operator-window.png)
 
-<sub>The operator window on its own synthetic bars — one region drawn on the wide, four outputs black because no DeckLink is in this machine, the control server listening on 9720. The build on this Mac, captured by window; the first time the layout has been looked at rather than served.</sub>
+<sub>The operator window on its own synthetic bars: one region drawn on the wide, four outputs black because there's no DeckLink in this machine, and the control server listening on 9720. It's the build on this Mac, captured by window, and the first time the layout has been looked at rather than served.</sub>
 
 ## The rule everything else follows
 
 **Every output produces a frame, every frame, always.**
 
-Not "every routed output". An SDI output that stops is an output the switcher
-downstream has to re-lock, and re-locking costs frames on air. So:
+That's every output, routed or not. An SDI output that stops is an output the
+switcher downstream has to re-lock, and re-locking costs frames on air. So:
 
-- An output with **nothing routed** to it carries its idle fill — legal black by
+- An output with **nothing routed** to it carries its idle fill: legal black by
   default, or bars, or the whole input as a confidence feed.
 - The **global outputs kill** blacks every output at once and leaves every
-  crosspoint intact. The signals keep running; nothing downstream notices
+  crosspoint intact. The signals keep running, and nothing downstream notices
   anything but the picture.
 - **Losing the input** blacks the routed outputs rather than freezing them. A
   frozen last-good frame looks live to anyone watching, which is worse than
   black.
 - An output with **no card assigned** is still planned and still rendered. It
-  simply has nowhere to go.
+  just has nowhere to go.
 
-That rule lives in one function, `Show::plan`, and the tests hold it down from
+That rule lives in one function, `Show::plan`, and the tests pin it down from
 every direction.
 
 ## Running it
@@ -60,9 +57,9 @@ cargo run --release -p kestrel-gui
 ```
 
 With no DeckLink in the machine it runs on generated colour bars with a sweeping
-marker, and everything except the SDI works — regions, routing, the matrix, the
-Companion module, the previews. That is deliberate: the app has to be buildable
-and demonstrable on a laptop.
+marker, and everything except the SDI works: regions, routing, the matrix, the
+Companion module, the previews. That's on purpose, because the app has to be
+buildable and demonstrable on a laptop.
 
 Headless, for a rack:
 
@@ -78,24 +75,23 @@ cargo run --release -p kestrel-app --bin kestrel -- devices
 
 ## SDI support is opt-in at build time
 
-The Blackmagic DeckLink SDK is a free but licence-gated download and is not ours
-to redistribute, so nothing from it is vendored. Point the build at your copy:
+The Blackmagic DeckLink SDK is a free but licence-gated download and isn't mine to
+redistribute, so nothing from it is vendored. Point the build at your copy:
 
 ```bash
 DECKLINK_SDK_DIR="/path/to/Blackmagic DeckLink SDK 12.9" cargo build --release
 ```
 
 SDK **11.0 or newer** is required. Without one, the build succeeds and reports
-`DeckLink: not compiled in` — which the app is careful to distinguish from
+`DeckLink: not compiled in`, which the app is careful to keep apart from
 `no devices found`, because the two have completely different fixes.
 
 ## Profiles, which is the thing that wastes an afternoon
 
-A multi-sub-device card presents **all** its sub-devices whatever profile it is
+A multi-sub-device card presents **all** its sub-devices whatever profile it's
 in, and the ones the profile has switched off support *no display modes at all*.
-A DeckLink Duo 2 in its two-sub-device profile shows four sub-devices of which
-two are dead — and an attempt to open one of those looks exactly like a broken
-card.
+A DeckLink Duo 2 in its two-sub-device profile shows four sub-devices, two of
+which are dead, and trying to open one of those looks just like a broken card.
 
 Kestrel wants one input and several outputs at once, which on a Duo 2 means the
 **four-sub-device half-duplex profile**. `kestrel devices` says which
@@ -104,8 +100,8 @@ rather than showing an empty menu.
 
 ## Control API
 
-HTTP for commands, a WebSocket for pushed state — the same split the rest of the
-fleet uses.
+HTTP for commands and a WebSocket for pushed state, the same split the rest of
+the fleet uses.
 
 | | |
 |---|---|
@@ -119,8 +115,8 @@ fleet uses.
 A refused command comes back as **HTTP 200 with `ok:false`** and a populated
 `error`. Check the body, not the status code.
 
-**There is no authentication.** Anyone who can reach the port can re-route every
-output and kill them all. Keep it on a management interface.
+**There's no authentication.** Anyone who can reach the port can re-route every
+output and kill the lot. Keep it on a management interface.
 
 See [`companion-module-kestrel`](https://github.com/stoatworks-labs/companion-module-kestrel)
 for the Stream Deck end.
@@ -129,39 +125,40 @@ for the Stream Deck end.
 
 Four GPU stages, all fragment shaders over a full-screen triangle:
 
-1. **decode** — UYVY to full-raster RGB, BT.709 limited range, chroma
+1. **decode:** UYVY to full-raster RGB, BT.709 limited range, chroma
    interpolated rather than nearest-sampled. Once per *captured* frame.
-2. **crop** — a rectangle of that, scaled to the output raster, Catmull-Rom
+2. **crop:** a rectangle of that, scaled to the output raster, Catmull-Rom
    bicubic or bilinear. Once per output per *output* frame.
-3. **fill** — black or bars, for an output carrying nothing.
-4. **pack** — RGB back to UYVY, into a half-width target whose rows are exactly
-   the byte layout DeckLink wants.
+3. **fill:** black or bars, for an output carrying nothing.
+4. **pack:** RGB back to UYVY, into a half-width target whose rows are byte for
+   byte the layout DeckLink wants.
 
 Stage 4 is why the CPU never touches a pixel: it only memcpys rows out of a
-mapped buffer. Everything intermediate is `Rgba8Unorm`, never sRGB — these
-pixels arrived over SDI already encoded, and a gamma re-encode on the way
-through would shift every colour on the output.
+mapped buffer. Everything in between is `Rgba8Unorm`, never sRGB. These pixels
+arrived over SDI already encoded, and a gamma re-encode on the way through would
+shift every colour on the output.
 
 ## What is verified, and what is not
 
-The honest version is in [`AGENTS.md`](AGENTS.md). The short one:
+The full version is in [`AGENTS.md`](AGENTS.md). The short one:
 
 - **Verified on this machine:** the whole GPU path by pixel readback (14 tests,
   including a raster whose rows need padding); the control API end to end; the
-  Companion module against a really-running Kestrel; 49.99 fps sustained at
+  Companion module against an actual running Kestrel; 49.99 fps sustained at
   1080p50 with the GUI open.
 - **Verified on hardware (2026-08-16):** SDI, on a real DeckLink Duo 2 in a
-  Mercury Helios 3S Thunderbolt chassis, ports 1↔4 cabled as a loopback, at a
-  fixed 1080p50. Output PASSES against an independently-written BT.709 probe —
-  all eight bars read back correctly off the wire at 1920x1080, black at Y=16 —
+  Mercury Helios 3S Thunderbolt chassis, with ports 1↔4 cabled as a loopback, at
+  a fixed 1080p50. Output PASSES against an independently written BT.709 probe
+  (all eight bars read back correctly off the wire at 1920x1080, black at Y=16),
   which puts scheduled playback, pre-roll, the frame pool, stride and 8-bit YUV
-  packing on real SDI. Enumeration and capture work; input loss gives legal
-  black and never the last good frame; the global kill mutes on the wire with
-  the crosspoint intact.
+  packing on real SDI. Enumeration and capture work, input loss gives legal
+  black and never the last good frame, and the global kill mutes on the wire
+  with the crosspoint intact.
 - **Never exercised:** format autodetection and mode changes. Everything above
-  ran at one fixed raster; a second cable across ports 2↔3 is what that needs.
+  ran at one fixed raster, and testing those needs a second cable across ports
+  2↔3.
 - **Never clicked:** the GUI's widgets. The window opens, runs, renders and
-  serves, and the logic underneath is unit-tested, but the layout has not been
+  serves, and the logic underneath is unit-tested, but the layout hasn't been
   visually confirmed.
 - **Never run:** Windows and Linux. Never built either.
 
@@ -169,7 +166,7 @@ The honest version is in [`AGENTS.md`](AGENTS.md). The short one:
 
 Network video protocols, Spout and Syphon, and fullscreen GPU output for a
 machine with no DeckLink in it. The output abstraction was built with those in
-mind — an output picks a target, and SDI is only the first one.
+mind: an output picks a target, and SDI is only the first one.
 
 <!-- attributions:start -->
 This project is built on other people's work — see [ATTRIBUTIONS.md](ATTRIBUTIONS.md).
