@@ -24,8 +24,9 @@ one thing at a time, and so does this.
 >
 > **Format autodetection and mode changes have never been exercised.** Everything ran at one fixed
 > raster, and testing them needs a second cable across ports 2↔3. **The GUI's widgets have never
-> been clicked**, though the layout has been looked at (the screenshot above). **Windows and Linux
-> have never been built or run.**
+> been clicked**, though the layout has been looked at (the screenshot above). **The app has never
+> been run on Windows or Linux.** Linux builds and passes the tests in CI; Windows has never been
+> built.
 >
 > This codebase was created with AI assistance, directed and reviewed by a human author.
 

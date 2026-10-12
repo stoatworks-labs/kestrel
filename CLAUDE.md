@@ -46,7 +46,7 @@ Refusals are HTTP 200 with `ok:false` — check the body, not the status.
 
 ## Companion module
 
-Separate repo, `~/Projects/companion-module-kestrel`.
+Separate repo, `~/Projects/companion/companion-module-kestrel`.
 
 ```bash
 npm test                          # against a fake Kestrel

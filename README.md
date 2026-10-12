@@ -5,7 +5,8 @@
 > hardware (a DeckLink Duo 2 at a fixed 1080p50, 2026-08-16), and the GPU path, the
 > control API and the Companion module are all tested. Format autodetect and mode
 > changes have never been exercised, the GUI's widgets have never been clicked, and
-> Windows and Linux have never been built or run. The details are under
+> the app has never been run on Windows or Linux (Linux only builds and passes the tests
+> in CI; Windows has never been built). The details are under
 > [What is verified, and what is not](#what-is-verified-and-what-is-not).
 
 One wide shot in, several tighter shots out.
@@ -161,7 +162,9 @@ The full version is in [`AGENTS.md`](AGENTS.md). The short one:
   serves, and the logic underneath is unit-tested. The layout has been looked at,
   in the screenshot at the top of this page (2026-09-15), but nothing in it has
   been clicked.
-- **Never run:** Windows and Linux. Never built either.
+- **Never run:** Windows and Linux. Windows has never been built either. Linux
+  builds, and passes `cargo test` with the GPU tests on a software Vulkan adapter, in
+  CI (since 2026-08-11), but the app itself has never run there.
 
 ## Later
 

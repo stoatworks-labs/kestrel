@@ -168,7 +168,9 @@ Keep this section honest. "Compiles" is never "works".
   success and captured the wrong window). The logic underneath —
   drag arithmetic, corner grabs, aspect locking, the matrix's short labels — is
   unit-tested; the widgets are not.
-- **Windows and Linux.** Never built, never run.
+- **Windows and Linux.** Never run. Windows has never been built. Linux builds and
+  passes `cargo test`, the GPU tests included (lavapipe), in `ci.yml` on
+  ubuntu-latest since 2026-08-11; the app has never been started there.
 
 **Not built at all:** NDI and the other network protocols, Spout, Syphon,
 fullscreen GPU output, audio of any kind, per-output format override.
