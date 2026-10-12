@@ -162,9 +162,10 @@ Keep this section honest. "Compiles" is never "works".
 - **Format autodetection and mode changes.** Everything above ran at a fixed
   1080p50. A second cable across ports 2↔3 is what this needs.
 - **The GUI's widgets have never been clicked.** The window opens, runs, renders
-  and serves; its layout has not been visually confirmed, because
-  `screencapture` and window-raising are unreliable on this Mac (two attempts,
-  both returned success and captured the wrong window). The logic underneath —
+  and serves. Its layout was first captured by window on 2026-09-15
+  (`docs/screenshots/operator-window.png`); before that, `screencapture` and
+  window-raising were unreliable on this Mac (two attempts, both returned
+  success and captured the wrong window). The logic underneath —
   drag arithmetic, corner grabs, aspect locking, the matrix's short labels — is
   unit-tested; the widgets are not.
 - **Windows and Linux.** Never built, never run.

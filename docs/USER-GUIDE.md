@@ -15,9 +15,17 @@ one thing at a time, and so does this.
 > a raster whose rows need padding), the control API end to end, and the Companion module against
 > an actual running Kestrel, with 49.99 fps sustained at 1080p50 with the GUI open.
 >
-> **No DeckLink has ever been connected to this code.** Every line of SDI (capture, playback,
-> pre-roll, format detection, profile handling) is written against the SDK headers and is unproven
-> here. **Windows and Linux have never been run.**
+> **SDI has been checked on a real DeckLink Duo 2** (2026-08-16, in a Mercury Helios 3S
+> Thunderbolt chassis, ports 1↔4 cabled as a loopback, at a fixed 1080p50). Output passes against
+> an independently written BT.709 probe (all eight bars read back correctly off the wire at
+> 1920x1080, black at Y=16), which covers scheduled playback, pre-roll, the frame pool, stride and
+> 8-bit YUV packing. Enumeration and capture work, losing the input gives legal black and never the
+> last good frame, and the global kill mutes on the wire with the crosspoints intact.
+>
+> **Format autodetection and mode changes have never been exercised.** Everything ran at one fixed
+> raster, and testing them needs a second cable across ports 2↔3. **The GUI's widgets have never
+> been clicked**, though the layout has been looked at (the screenshot above). **Windows and Linux
+> have never been built or run.**
 >
 > This codebase was created with AI assistance, directed and reviewed by a human author.
 

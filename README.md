@@ -158,8 +158,9 @@ The full version is in [`AGENTS.md`](AGENTS.md). The short one:
   ran at one fixed raster, and testing those needs a second cable across ports
   2↔3.
 - **Never clicked:** the GUI's widgets. The window opens, runs, renders and
-  serves, and the logic underneath is unit-tested, but the layout hasn't been
-  visually confirmed.
+  serves, and the logic underneath is unit-tested. The layout has been looked at,
+  in the screenshot at the top of this page (2026-09-15), but nothing in it has
+  been clicked.
 - **Never run:** Windows and Linux. Never built either.
 
 ## Later

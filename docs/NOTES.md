@@ -67,7 +67,8 @@ reliable.
 Still unproven: **format autodetect and mode changes** were never exercised (a
 second SDI cable on ports 2↔3 would allow it). **The GUI's widgets have never
 been clicked** — the
-window opens, runs and serves, but the layout was never visually confirmed (see
+window opens, runs and serves. The layout was first captured by window on
+2026-09-15 (`docs/screenshots/operator-window.png`); before that, capture failed (see
 **screenshot capture** (working-practice note, kept in Claude memory); two attempts, both reported success and
 captured the wrong window). Windows and Linux: never built.
 
