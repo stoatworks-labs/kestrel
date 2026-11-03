@@ -11,6 +11,8 @@
 
 One wide shot in, several tighter shots out.
 
+The [project page](https://stoatworks-labs.com/software/kestrel/) has the [user guide](https://stoatworks-labs.com/software/kestrel/guide/).
+
 Kestrel takes a single video input (usually a locked-off wide of a stage), lets you
 draw as many **regions of interest** on it as you like, and sends each region back
 out of a Blackmagic DeckLink, cropped and scaled to the output raster. A kestrel
