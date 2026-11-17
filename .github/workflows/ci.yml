@@ -15,7 +15,9 @@ env:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Pinned rather than ubuntu-latest: on ubuntu-26.04, lavapipe from mesa 26.0.8
+    # crashes the GPU tests with SIGSEGV at random. 24.04's mesa 25.2.8 never did.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
 
